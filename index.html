@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css">
+    <script src="hellfire.js"></script>
+    <script type="text/javascript">
+
+        var hellFire;
+        var fireProps = {   wind: 2,
+                            spread: 4,
+                            verticalPropagation: 2,
+                        fireHeightFactor: .5};
+
+        function main() {
+            var canvas = document.getElementById("mainCanvas");
+            canvas.style.width = 512 + "px";
+            canvas.style.height = 512 + "px";
+            canvas.width = 512;
+            canvas.height = 512;
+
+
+            var fire = function(bnObject, row, column) {
+                var spread = Math.round((Math.random() * fireProps.spread) - Math.floor(fireProps.spread/2));
+                var wind = -Math.round(Math.random() * fireProps.wind);
+                var verticalPropagation = Math.ceil(Math.random() * fireProps.verticalPropagation);
+                var belowValue = bnObject.mapBuffer.getValue(row  + verticalPropagation, column + spread + wind); //grab the value of the dot below this one.
+                if(belowValue != null) { //if the value below is not zero.
+                    if(belowValue > 0) {
+                        if(Math.random() > fireProps.fireHeightFactor) {
+                            belowValue -=1;
+                        }
+                        bnObject.mapBuffer.setValue(row, column, belowValue);
+                    }else{
+                        bnObject.mapBuffer.setValue(row, column, 0);
+                    }
+                }
+            }
+
+            hellFire = new Hellfire(canvas, 128, 128, fire);
+            update(hellFire);
+        }
+
+        function update(hellfireObject) {
+            hellfireObject.draw();
+            window.requestAnimationFrame(() => { update(hellfireObject); });
+        }
+    </script>
+</head>
+<body onload="main();">
+    <canvas id="mainCanvas"></canvas>
+</body>
+</html>
