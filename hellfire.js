@@ -1,139 +1,153 @@
-//dots will be held as color {}s in a 2d array.
-//the number of dots in the image is defined at init, and never changes.
-//dots may be resized at runtime. because of this, their pixel size should be calculated at draw-time.
-//!!!!!!!!!! DONT STORE COLOR {}s, STORE A SINGLE NUMBER THAT REPRESENTS FIRE INTENSITY.
 //  other values can be stored to modify other mutating factors over time, but lets just start with this.
-
 
 //The map buffer is where the draw data is stored. 
 //This is necessary because this program needs to be double buffered.
-function DoubleBufferedMap(rows, columns) {
-    this.rows = rows;
-    this.columns = columns;
+function BufferedMap(width, height) {
+    this.width = width;
+    this.height = height;
     this.primaryBuffer = [];
     this.backBuffer = [];
 
-    for(var r = 0; r < rows; r++) { //for every row
-        this.primaryBuffer[r] = []; //create a row here
-        this.backBuffer[r] = []; //create a row here
-        for(var c = 0; c < columns; c++) { //for every column
-            if(r == rows - 1) {
-                this.backBuffer[r][c] = 15;
+    for(var y = 0; y < this.height; y++) { //for every x coordinate
+        this.primaryBuffer[y] = [];
+        this.backBuffer[y] = [];
+        for(var x = 0; x < this.width; x++) { //for every column
+            if(y == height - 1) {
+                this.backBuffer[y][x] = 15;
             }else {
-                this.backBuffer[r][c] = 0;
+                this.backBuffer[y][x] = 0;
             }
-            this.primaryBuffer[r][c] = 0;
-            
+            this.primaryBuffer[y][x] = 0;
         }
     }
 }
 
 //returns the value from the primary buffer.
-DoubleBufferedMap.prototype.getValue = function(row, column) {
-    if(this.primaryBuffer[row] == null || this.primaryBuffer[row][column] == null) {
+BufferedMap.prototype.getValue = function(x, y) {
+    if(this.primaryBuffer[y] == null || this.primaryBuffer[y][x] == null) {
         return null;
     }
-    return this.primaryBuffer[row][column];
+    return this.primaryBuffer[y][x];
 }
 
 //sets the value to the BACK buffer.
-DoubleBufferedMap.prototype.setValue = function(row, column, value) {
-    if(this.backBuffer[row] == null || this.backBuffer[row][column] == null) {
+BufferedMap.prototype.setValue = function(x, y, value) {
+    if(this.backBuffer[y] == null || this.backBuffer[y][x] == null) {
         return;
     }
-    this.backBuffer[row][column] = value;
+    this.backBuffer[y][x] = value;
 }
 
 //move values from the backBuffer to the primary buffer, then clear the backbuffer.
 //  we could leave the backbuffer with old data, but clearing it with 0s gives us more 
 //  predictable code, should something get weird.
-DoubleBufferedMap.prototype.swap = function () {
-    for(var row = 0; row < this.rows; row++) { //for every row
-        for(var column = 0; column < this.columns; column++) { //for every column
-            this.primaryBuffer[row][column] = this.backBuffer[row][column]; //put the value in the backbuffer into the primary.
+BufferedMap.prototype.swap = function () {
+    for(var y = 0; y < this.height; y++) { //for every row
+        for(var x = 0; x < this.width; x++) { //for every column
+            this.primaryBuffer[y][x] = this.backBuffer[y][x]; //put the value in the backbuffer into the primary.
             //this.backBuffer[row][column] = 0; //clear the back buffer.
         }
     }
 }
 
 
-
-function Hellfire(canvas, rows, columns, processMethod) {
-    this.canvas = canvas
-    this.canvasContext = canvas.getContext('2d', { alpha: false });
-    this.mapBuffer = new DoubleBufferedMap(rows, columns);
+function Hellfire(canvas, scale, processMethod) {
     this.processMethod = processMethod;
+    this.canvas = canvas
+    this.scale = scale;
 
-    this.offscreenCanvas = document.createElement('canvas');
-    this.offscreenCanvas.width = canvas.width;
-    this.offscreenCanvas.height = canvas.height;
-    this.offscreenCanvasContext = this.offscreenCanvas.getContext('2d', {alpha: false});
+
+    this.canvasContext = canvas.getContext('2d');
+
+    //set the canvas' internal size to its actual pyhsical dimension
+    this.canvas.width = this.canvas.scrollWidth;
+    this.canvas.height = this.canvas.scrollHeight;
+
+    this.canvasContext.scale(this.scale, this.scale);
+
+    this.bufferedMap = new BufferedMap( Math.floor(this.canvas.scrollWidth / scale), 
+                                        Math.floor(this.canvas.scrollHeight / scale));
+
+    this.pixelBuffer = this.canvasContext.createImageData(this.bufferedMap.width, this.bufferedMap.height);
+    
+    this.canvasContext.imageSmoothingEnabled = false;
 }
 
 Hellfire.prototype.colorFromNumber = function(number) {
 
     if(number == 0) {
-        return "#070707";
+        return [16, 12, 16];
+        //return "#100C10";
     }else if(number == 1) {
-        return "#2f0f07";
+        return [47, 15, 7];
+        //return "#2f0f07";
     }else if(number == 2) {
-        return "#571707";
+        return [87,23,7];
+        //return "#571707";
     }else if(number == 3) {
-        return "#771f07";
+        return [119,31,7];
+        //return "#771f07";
     }else if(number == 4) {
-        return "#9f2f07";
+        return [159,47,7];
+        //return "#9f2f07";
     }else if(number == 5){
-        return "#bf4707";
+        return [191,71,7];
+        //return "#bf4707";
     }else if(number == 6){
-        return "#DF5707";
+        return [223,87,7];
+        //return "#DF5707";
     }else if(number == 7){
-        return "#D75F07";
+        return [215,95,7];
+        //return "#D75F07";
     }else if(number == 8){
-        return "#cf6f0f";
+        return [207,111,15];
+        //return "#cf6f0f";
     }else if(number == 9){
-        return "#C7971F";
+        return [199,151,31];
+        //return "#C7971F";
     }else if(number == 10){
-        return "#BF9F1F";
+        return [191,159,31];
+        //return "#BF9F1F";
     }else if(number == 11){
-        return "#BFA727";
+        return [191,167,39];
+        //return "#BFA727";
     }else if(number == 12){
-        return "#B7B737";
+        return [183,183,55];
+        //return "#B7B737";
     }else if(number == 13){
-        return "#CFCF6F";
+        return [207,207,111];
+        //return "#CFCF6F";
     }else if(number == 14){
-        return "#DFDF9F";
+        return [223,223,159];
+        //return "#DFDF9F";
     }else {
-        return "#FFFFFF"
+        return [255,255,255];
+        //return "#FFFFFF"
     }
 }
 
-Hellfire.prototype.drawDot = function(row, column, color) {
-    var dotWidth = this.canvas.width / this.mapBuffer.columns;
-    var dotHeight = this.canvas.height / this.mapBuffer.rows;
-
-    this.offscreenCanvasContext.fillStyle = color;
-    this.offscreenCanvasContext.fillRect(column * dotWidth, row * dotHeight, dotWidth, dotHeight);
+Hellfire.prototype.drawDot = function(x, y, color) {
+    //determine the exact pixel location, and modify its buffers.
+    var index = ((y * this.bufferedMap.width) + x);
+    
+    this.pixelBuffer.data[(index * 4)] = color[0]//red;
+    this.pixelBuffer.data[(index * 4) + 1] = color[1] //green;
+    this.pixelBuffer.data[(index * 4) + 2] = color[2]//blue
+    this.pixelBuffer.data[(index * 4) + 3] = 255;//opaque
 }
 
-Hellfire.prototype.rgbToHexColor = function(r, g, b) {
-    function numberToHex(num) {
-        var hex = num.toString(16);
-        return hex.length == 1 ? "0" + hex : hex;
-    }
-    return "#" + numberToHex(r) + numberToHex(g) + numberToHex(b);
-}
 
 Hellfire.prototype.draw = function () {
-    //swap buffers
-    //draw.
-    this.mapBuffer.swap();
-    for(var row = 0; row < this.mapBuffer.rows; row++) { //for every row
-        for(var column = 0; column < this.mapBuffer.columns; column++) { //for every column
-            this.processMethod(this, row, column);
-            //if(this.mapBuffer.getValue(row, column) != 0) {
-                this.drawDot(row, column, this.colorFromNumber(this.mapBuffer.getValue(row, column)));
-            //}
+    //swap map buffers. process, draw to back pixel buffer, then draw buffer to canvas.
+    this.bufferedMap.swap();
+
+    for(var y = 0; y < this.bufferedMap.height; y++) { //for every row
+        for(var x = 0; x < this.bufferedMap.width; x++) { //for every column
+                this.processMethod(this, x, y);
+                this.drawDot(x, y, this.colorFromNumber(this.bufferedMap.getValue(x, y)));
         }
     }
-    this.canvasContext.drawImage(this.offscreenCanvas, 0, 0);
+    this.canvasContext.putImageData(this.pixelBuffer, 0, 0);
+    this.canvasContext.drawImage(this.canvas, 0, 0);
+
 }

@@ -8,49 +8,45 @@
     <link rel="stylesheet" type="text/css" media="screen" href="main.css">
     <script src="hellfire.js"></script>
     <script type="text/javascript">
-
-        var hellFire;
-        var fireProps = {   wind: 2,
-                            spread: 4,
-                            verticalPropagation: 2,
-                        fireHeightFactor: .5};
-
         function main() {
-            var canvas = document.getElementById("mainCanvas");
-            canvas.style.width = 512 + "px";
-            canvas.style.height = 512 + "px";
-            canvas.width = 512;
-            canvas.height = 512;
 
+            var fireProps = {   
+                wind: 0, //any real value. (good 2)
+                spread: 3, //any integer value (good 3)
+                verticalPropagation: 2, //any positive integer. (good: 2)
+                fireHeightFactor: .7//any value between 0 and 1. (Good: 7)
+            };
 
-            var fire = function(bnObject, row, column) {
+            var fire = function(hellFireObject, x, y) {
                 var spread = Math.round((Math.random() * fireProps.spread) - Math.floor(fireProps.spread/2));
                 var wind = -Math.round(Math.random() * fireProps.wind);
+
                 var verticalPropagation = Math.ceil(Math.random() * fireProps.verticalPropagation);
-                var belowValue = bnObject.mapBuffer.getValue(row  + verticalPropagation, column + spread + wind); //grab the value of the dot below this one.
+                var belowValue = hellFireObject.bufferedMap.getValue(x + spread + wind, y + verticalPropagation); //grab the value of the dot below this one.
                 if(belowValue != null) { //if the value below is not zero.
                     if(belowValue > 0) {
                         if(Math.random() > fireProps.fireHeightFactor) {
                             belowValue -=1;
                         }
-                        bnObject.mapBuffer.setValue(row, column, belowValue);
+                        hellFireObject.bufferedMap.setValue(x, y, belowValue);
                     }else{
-                        bnObject.mapBuffer.setValue(row, column, 0);
+                        hellFireObject.bufferedMap.setValue(x, y, 0);
                     }
                 }
             }
-
-            hellFire = new Hellfire(canvas, 128, 128, fire);
+            var canvas = document.getElementById("mainCanvas");
+            var hellFire = new Hellfire(canvas, 4, fire);
             update(hellFire);
         }
 
         function update(hellfireObject) {
             hellfireObject.draw();
-            window.requestAnimationFrame(() => { update(hellfireObject); });
+            setTimeout(() => { update(hellfireObject); }, 12);
         }
+
     </script>
 </head>
 <body onload="main();">
-    <canvas id="mainCanvas"></canvas>
+    <canvas id="mainCanvas" width="512", height="512"></canvas>
 </body>
 </html>
